@@ -8,6 +8,6 @@ from .views import LogoutView
 urlpatterns = [
     path('sign-in/', LoginAPI.as_view(), name='sign-in'),
     path('sign-out/', LogoutView.as_view(), name='sign-out'),
-    path('signup/', RegisterAPI.as_view(), name='signup')
+    path('signup/', RegisterAPI.as_view(), name='signup'),
 
 ]
