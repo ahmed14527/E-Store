@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     'favorite',
     'orders',
     'resetpassword',
+    'addresses',
 ]
 
 MIDDLEWARE = [
