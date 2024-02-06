@@ -40,6 +40,11 @@ INSTALLED_APPS = [
     'knox',
     'rest_framework',
     'drf_yasg',
+    'products',
+    'accounts',
+    'favorite',
+    'orders',
+    'resetpassword',
 ]
 
 MIDDLEWARE = [
