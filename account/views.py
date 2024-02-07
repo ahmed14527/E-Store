@@ -1,3 +1,21 @@
+from datetime import datetime, timedelta
+from django.shortcuts import get_object_or_404, render
+from rest_framework.decorators import api_view, permission_classes, schema
+from rest_framework.response import Response
+from django.contrib.auth.models import User
+from django.contrib.auth.hashers import make_password
+from rest_framework import status
+from .serializers import  UserSerializer
+from rest_framework.permissions import IsAuthenticated
+from django.utils.crypto import get_random_string
+from django.core.mail import send_mail
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from django.contrib.auth import authenticate, login, logout
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
+from django.views.decorators.csrf import csrf_exempt
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import generics, permissions, status
@@ -114,24 +132,106 @@ class UserListView(generics.ListAPIView):
         return self.list(request, *args, **kwargs)
     
     
-    
-from django.contrib.auth.decorators import login_required
-from django.http import JsonResponse
 
-from drf_yasg.utils import swagger_auto_schema
-from rest_framework.decorators import api_view
-from rest_framework.response import Response
-
-@swagger_auto_schema(method='GET', operation_summary='User Profile', responses={200: 'OK'})
+@csrf_exempt 
 @api_view(['GET'])
-def user_profile(request):
+@permission_classes([IsAuthenticated])
+def current_user(request):
     """
-    Retrieve the user profile.
+    Get the details of the currently authenticated user.
+    """
+    user = UserSerializer(request.user, many=False)
+    return Response(user.data)
+
+@csrf_exempt 
+@swagger_auto_schema(method='PUT', request_body=UserSerializer)
+@api_view(['PUT'])
+@permission_classes([IsAuthenticated])
+def update_user(request):
+    """
+    Update the details of the currently authenticated user.
     """
     user = request.user
-    data = {
-        'id': user.id,
-        'username': user.username,
+    data = request.data
+
+    user.first_name = data['first_name']
+    user.username = data['email']
+    user.last_name = data['last_name']
+    user.email = data['email']
+
+    if data['password'] != "":
+        user.password = make_password(data['password'])
+
+    user.save()
+    serializer = UserSerializer(user, many=False)
+    return Response(serializer.data)
+
+
+def get_current_host(request):
+    protocol = request.is_secure() and 'https' or 'http'
+    host = request.get_host()
+    return "{protocol}://{host}/".format(protocol=protocol, host=host)
+
+
+@swagger_auto_schema(method='POST', request_body=openapi.Schema(
+    type=openapi.TYPE_OBJECT,
+    required=['email'],
+    properties={
+        'email': openapi.Schema(type=openapi.TYPE_STRING)
     }
-    return Response(data)
-    
+))
+@csrf_exempt 
+@api_view(['POST'])
+def forgot_password(request):
+    """
+    Send a password reset email to the user.
+    """
+    data = request.data
+    user = get_object_or_404(User, email=data['email'])
+    token = get_random_string(40)
+    expire_date = datetime.now() + timedelta(minutes=30)
+    user.profile.reset_password_token = token
+    user.profile.reset_password_expire = expire_date
+    user.profile.save()
+
+    host = get_current_host(request)
+    link = "http://localhost:8000/api/reset_password/{token}".format(token=token)
+    body = "Your password reset link is: {link}".format(link=link)
+    send_mail(
+        "Password reset from eMarket",
+       body,
+        "eMarket@gmail.com",
+        [data['email']]
+    )
+    return Response({'details': 'Password reset sent to {email}'.format(email=data['email'])})
+
+
+@swagger_auto_schema(method='POST', request_body=openapi.Schema(
+    type=openapi.TYPE_OBJECT,
+    required=['password', 'confirmPassword'],
+    properties={
+        'password': openapi.Schema(type=openapi.TYPE_STRING),
+        'confirmPassword': openapi.Schema(type=openapi.TYPE_STRING)
+    }
+))
+@csrf_exempt 
+@api_view(['POST'])
+def reset_password(request, token):
+    """
+    Reset the password of a user using a password reset token.
+    """
+    data = request.data
+    user = get_object_or_404(User, profile__reset_password_token=token)
+
+    if user.profile.reset_password_expire.replace(tzinfo=None) < datetime.now():
+        return Response({'error': 'Token is expired'}, status=status.HTTP_400_BAD_REQUEST)
+
+    if data['password'] != data['confirmPassword']:
+        return Response({'error': 'Passwords do not match'}, status=status.HTTP_400_BAD_REQUEST)
+
+    user.password = make_password(data['password'])
+    user.profile.reset_password_token = ""
+    user.profile.reset_password_expire = None
+    user.profile.save()
+    user.save()
+    return Response({'details': 'Password reset done'})
