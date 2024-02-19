@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     'orders',
     'resetpassword',
     'addresses',
+    'basket',
 ]
 
 MIDDLEWARE = [
