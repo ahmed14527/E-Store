@@ -43,10 +43,12 @@ INSTALLED_APPS = [
     'drf_yasg',
     'products',
     'favorite',
-    'orders',
     'resetpassword',
     'addresses',
     'basket',
+    'payment',
+    'cart',
+    'order',
 ]
 
 MIDDLEWARE = [

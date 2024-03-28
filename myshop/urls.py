@@ -14,12 +14,15 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+
 from django.contrib import admin
 from django.urls import path,include
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from django.urls import path, re_path, include
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
+from payment.views import PaymentView ,my_webhook_view
+
 
 schema_view = get_schema_view(
     openapi.Info(
@@ -37,10 +40,13 @@ urlpatterns = [
     path('', include('account.urls')),
     path('', include('products.urls')),
     path('', include('addresses.urls')),
-    path('', include('orders.urls')),
     path('', include('favorite.urls')),
     path('', include('resetpassword.urls')),
+    path('order/', include('order.urls')),
     path('', include('basket.urls')),
+    path('cart/', include('cart.urls')),
+    path('api/webhook', my_webhook_view, name='stripe_webhook'),
+    path('payment/', PaymentView.as_view(), name='payment'),
     re_path(r'^swagger(?P<format>\.json|\.yaml)$', schema_view.without_ui(cache_timeout=0), name='schema-json'),
     path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
     path('redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
