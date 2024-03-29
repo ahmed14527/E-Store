@@ -46,7 +46,6 @@ INSTALLED_APPS = [
     'resetpassword',
     'addresses',
     'basket',
-    'payment',
     'cart',
     'order',
 ]
