@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     'basket',
     'cart',
     'order',
+    'payments',
 ]
 
 MIDDLEWARE = [
@@ -162,3 +163,6 @@ SWAGGER_SETTINGS = {
     },
     'USE_SESSION_AUTH': False,  # If using token-based authentication
 }
+
+
+STRIPE_SECRET_KEY = 'sk_test_51LphGxD52PSgoJyghjqYyqsoH3vJzTdvLo3d3VqyiNjh7UU3JW5zuDZGgy2y45RYu5zg8i0fRalFW6r5QiZUhHMs00D6fTdVM6'
